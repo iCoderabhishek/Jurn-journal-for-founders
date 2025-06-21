@@ -1,0 +1,86 @@
+generator client {
+  provider = "prisma-client-js"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id          String  @id @default(cuid())
+  clerkUserId String  @unique
+  email       String  @unique
+  name        String?
+  imageUrl    String?
+
+  entries   Entry[]
+  draft     Draft?    @relation("UserDraft")
+  summaries Summary[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Entry {
+  id           String   @id @default(cuid())
+  title        String
+  content      String   @db.Text
+  mood         String
+  moodScore    Int
+  moodImageUrl String?
+  tags         String[]
+
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId String
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Draft {
+  id      String   @id @default(cuid())
+  title   String?
+  content String?  @db.Text
+  mood    String?
+  tags    String[]
+
+  user   User   @relation("UserDraft", fields: [userId], references: [id], onDelete: Cascade)
+  userId String @unique
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Quote {
+  id        String    @id @default(cuid())
+  text      String
+  author    String?
+  type      QuoteType
+  createdAt DateTime  @default(now())
+}
+
+model Summary {
+  id         String        @id @default(cuid())
+  period     SummaryPeriod
+  moodTrend  String?
+  topTags    String[]
+  entryCount Int
+
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId String
+
+  createdAt DateTime @default(now())
+}
+
+enum QuoteType {
+  DAILY
+  WEEKLY
+  MONTHLY
+}
+
+enum SummaryPeriod {
+  WEEKLY
+  MONTHLY
+}
