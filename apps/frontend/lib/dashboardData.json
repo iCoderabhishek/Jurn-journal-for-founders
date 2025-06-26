@@ -1,0 +1,82 @@
+{
+    "user": {
+      "name": "Alex Chen",
+      "avatar": "👨‍💼",
+      "streak": 12,
+      "totalEntries": 47,
+      "joinedDate": "2024-01-15"
+    },
+    "stats": {
+      "thisWeek": 5,
+      "thisMonth": 18,
+      "longestStreak": 23,
+      "averageWordsPerEntry": 248
+    },
+    "quotes": [
+      {
+        "text": "The way to get started is to quit talking and begin doing.",
+        "author": "Walt Disney",
+        "day": 0
+      },
+      {
+        "text": "Innovation distinguishes between a leader and a follower.",
+        "author": "Steve Jobs",
+        "day": 1
+      },
+      {
+        "text": "Your work is going to fill a large part of your life, and the only way to be truly satisfied is to do what you believe is great work.",
+        "author": "Steve Jobs",
+        "day": 2
+      },
+      {
+        "text": "The future belongs to those who believe in the beauty of their dreams.",
+        "author": "Eleanor Roosevelt", 
+        "day": 3
+      },
+      {
+        "text": "Success is not final, failure is not fatal: it is the courage to continue that counts.",
+        "author": "Winston Churchill",
+        "day": 4
+      },
+      {
+        "text": "The only way to do great work is to love what you do.",
+        "author": "Steve Jobs",
+        "day": 5
+      },
+      {
+        "text": "Don't watch the clock; do what it does. Keep going.",
+        "author": "Sam Levenson",
+        "day": 6
+      }
+    ],
+    "quickActions": [
+      {
+        "id": "new-entry",
+        "label": "New Entry",
+        "icon": "PlusCircle",
+        "description": "Start writing today's journal",
+        "color": "bg-blue-500 hover:bg-blue-600"
+      },
+      {
+        "id": "view-timeline",
+        "label": "Timeline",
+        "icon": "Calendar",
+        "description": "Browse your journal history",
+        "color": "bg-green-500 hover:bg-green-600"
+      },
+      {
+        "id": "insights",
+        "label": "Insights",
+        "icon": "TrendingUp",
+        "description": "View progress and analytics",
+        "color": "bg-purple-500 hover:bg-purple-600"
+      },
+      {
+        "id": "goals",
+        "label": "Goals",
+        "icon": "Target",
+        "description": "Track your objectives",
+        "color": "bg-orange-500 hover:bg-orange-600"
+      }
+    ]
+  }

@@ -1,0 +1,7 @@
+{
+    "title": "This is testing1, hope this work",
+    "content": "This is the content",
+    "mood": "happy",
+    "tags": ["tag1", "tag2"],
+    "moodScore": 5   
+}

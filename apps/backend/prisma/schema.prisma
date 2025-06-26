@@ -1,86 +1,280 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
 generator client {
-  provider = "prisma-client-js"
-  output   = "../generated/prisma"
+    provider = "prisma-client-js"
 }
 
 datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
+    provider = "postgresql"
+    url      = env("DATABASE_URL")
 }
 
+// User model for authentication and profile
 model User {
-  id          String  @id @default(cuid())
-  clerkUserId String  @unique
-  email       String  @unique
-  name        String?
-  imageUrl    String?
+    id              String           @id @default(cuid())
+    email           String           @unique
+    name            String
+    avatar          String? // Emoji or image URL
+    createdAt       DateTime         @default(now())
+    updatedAt       DateTime         @updatedAt
+    writingPatterns WritingPattern[]
+    moodEntries     MoodEntry[]
+    userPreferences UserPreference[]
+    reminders       Reminder[]
 
-  entries   Entry[]
-  draft     Draft?    @relation("UserDraft")
-  summaries Summary[]
+    // User preferences and settings
+    theme           String  @default("dark") // "light" | "dark" | "system"
+    timezone        String  @default("UTC")
+    reminderEnabled Boolean @default(true)
+    reminderTime    String? // "09:00" format
 
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+    // Journaling stats
+    totalEntries  Int      @default(0)
+    currentStreak Int      @default(0)
+    longestStreak Int      @default(0)
+    joinedDate    DateTime @default(now())
+
+    // Relations
+    entries    Entry[]
+    goals      Goal[]
+    milestones Milestone[]
+    insights   Insight[]
+    aiQueries  AIQuery[]
+    tags       Tag[]
+
+    @@map("users")
 }
 
+// Main journal entry model
 model Entry {
-  id           String   @id @default(cuid())
-  title        String
-  content      String   @db.Text
-  mood         String
-  moodScore    Int
-  moodImageUrl String?
-  tags         String[]
+    id        String   @id @default(cuid())
+    title     String
+    content   String   @db.Text
+    mood      String? // Emoji representation
+    wordCount Int      @default(0)
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
 
-  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
-  userId String
+    // Metadata
+    isPrivate   Boolean @default(false)
+    isFavorite  Boolean @default(false)
+    readingTime Int? // in minutes
 
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+    // Relations
+    userId String
+    user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+    // Many-to-many with tags
+    entryTags EntryTag[]
+
+    @@map("entries")
 }
 
-model Draft {
-  id      String   @id @default(cuid())
-  title   String?
-  content String?  @db.Text
-  mood    String?
-  tags    String[]
+// Tags for categorizing entries
+model Tag {
+    id        String   @id @default(cuid())
+    name      String
+    color     String? // Hex color code
+    createdAt DateTime @default(now())
 
-  user   User   @relation("UserDraft", fields: [userId], references: [id], onDelete: Cascade)
-  userId String @unique
+    // Relations
+    userId String
+    user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+    entryTags EntryTag[]
+
+    @@unique([userId, name]) // User can't have duplicate tag names
+    @@map("tags")
 }
 
+// Junction table for Entry-Tag many-to-many relationship
+model EntryTag {
+    id String @id @default(cuid())
+
+    entryId String
+    entry   Entry  @relation(fields: [entryId], references: [id], onDelete: Cascade)
+
+    tagId String
+    tag   Tag    @relation(fields: [tagId], references: [id], onDelete: Cascade)
+
+    @@unique([entryId, tagId])
+    @@map("entry_tags")
+}
+
+// User goals and objectives
+model Goal {
+    id          String    @id @default(cuid())
+    title       String
+    description String?   @db.Text
+    category    String // "personal" | "professional" | "health" | "learning"
+    status      String    @default("active") // "active" | "completed" | "paused" | "cancelled"
+    priority    String    @default("medium") // "low" | "medium" | "high"
+    targetDate  DateTime?
+    createdAt   DateTime  @default(now())
+    updatedAt   DateTime  @updatedAt
+
+    // Progress tracking
+    progress     Int  @default(0) // 0-100 percentage
+    targetValue  Int? // For quantifiable goals
+    currentValue Int  @default(0)
+
+    // Relations
+    userId String
+    user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+    @@map("goals")
+}
+
+// Milestones and achievements
+model Milestone {
+    id          String    @id @default(cuid())
+    title       String
+    description String?   @db.Text
+    type        String // "streak" | "entries" | "words" | "custom"
+    achieved    Boolean   @default(false)
+    achievedAt  DateTime?
+    createdAt   DateTime  @default(now())
+
+    // Milestone criteria
+    targetValue  Int? // e.g., 30 for "30-day streak"
+    currentValue Int  @default(0)
+
+    // Relations
+    userId String
+    user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+    @@map("milestones")
+}
+
+// AI-generated insights and analytics
+model Insight {
+    id         String   @id @default(cuid())
+    type       String // "pattern" | "emotional" | "growth" | "recommendation"
+    title      String
+    content    String   @db.Text
+    confidence Int      @default(0) // 0-100 confidence score
+    createdAt  DateTime @default(now())
+
+    // Insight metadata
+    timeframe String? // "week" | "month" | "quarter" | "year"
+    category  String? // "writing" | "mood" | "productivity" | "goals"
+
+    // Relations
+    userId String
+    user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+    @@map("insights")
+}
+
+// AI query history and responses
+model AIQuery {
+    id        String   @id @default(cuid())
+    question  String   @db.Text
+    response  String?  @db.Text
+    status    String   @default("pending") // "pending" | "completed" | "failed"
+    createdAt DateTime @default(now())
+
+    // Query metadata
+    category   String? // "patterns" | "emotional" | "growth" | "leadership"
+    confidence Int? // Response confidence score
+
+    // Relations
+    userId String
+    user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+    @@map("ai_queries")
+}
+
+// Daily quotes for inspiration
 model Quote {
-  id        String    @id @default(cuid())
-  text      String
-  author    String?
-  type      QuoteType
-  createdAt DateTime  @default(now())
+    id        String   @id @default(cuid())
+    text      String   @db.Text
+    author    String
+    category  String? // "motivation" | "leadership" | "creativity" | "mindfulness"
+    dayOfWeek Int? // 0-6 for specific day assignments
+    isActive  Boolean  @default(true)
+    createdAt DateTime @default(now())
+
+    @@map("quotes")
 }
 
-model Summary {
-  id         String        @id @default(cuid())
-  period     SummaryPeriod
-  moodTrend  String?
-  topTags    String[]
-  entryCount Int
+// Writing patterns and analytics
+model WritingPattern {
+    id        String   @id @default(cuid())
+    date      DateTime @db.Date
+    createdAt DateTime @default(now())
 
-  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
-  userId String
+    // Daily metrics
+    entriesCount Int      @default(0)
+    totalWords   Int      @default(0)
+    averageWords Int      @default(0)
+    writingTime  Int      @default(0) // in minutes
+    dominantMood String?
+    topTags      String[] // Array of tag names
 
-  createdAt DateTime @default(now())
+    // Time-based patterns
+    peakWritingHour Int? // 0-23 hour format
+    sessionLength   Int  @default(0) // in minutes
+
+    // Relations
+    userId String
+    user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+    @@unique([userId, date])
+    @@map("writing_patterns")
 }
 
-enum QuoteType {
-  DAILY
-  WEEKLY
-  MONTHLY
+// Mood tracking over time
+model MoodEntry {
+    id        String   @id @default(cuid())
+    mood      String // Emoji or mood identifier
+    intensity Int      @default(5) // 1-10 scale
+    notes     String?  @db.Text
+    createdAt DateTime @default(now())
+
+    // Context
+    triggers   String[] // Array of mood triggers
+    activities String[] // What user was doing
+
+    // Relations
+    userId String
+    user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+    @@map("mood_entries")
 }
 
-enum SummaryPeriod {
-  WEEKLY
-  MONTHLY
+// User preferences and settings
+model UserPreference {
+    id        String   @id @default(cuid())
+    key       String // preference key
+    value     String // preference value (JSON string for complex values)
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+
+    // Relations
+    userId String
+    user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+    @@unique([userId, key])
+    @@map("user_preferences")
+}
+
+// Notification and reminder system
+model Reminder {
+    id        String   @id @default(cuid())
+    title     String
+    message   String?  @db.Text
+    type      String // "daily" | "weekly" | "goal" | "milestone"
+    time      String // "09:00" format
+    days      String[] // ["monday", "tuesday"] for weekly reminders
+    isActive  Boolean  @default(true)
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+
+    // Relations
+    userId String
+    user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+    @@map("reminders")
 }
